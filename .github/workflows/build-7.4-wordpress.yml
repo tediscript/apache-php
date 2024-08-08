@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - '7.4-wordpress'
+      - '7.4-wordpress/**'
 
 jobs:
   build:
