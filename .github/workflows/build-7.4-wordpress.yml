@@ -27,7 +27,7 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v2
         with:
-          context: ./7.4-wordpress
+          context: 7.4-wordpress
           file: Dockerfile
           push: true
           tags: tediscript/apache-php:7.4-wordpress
