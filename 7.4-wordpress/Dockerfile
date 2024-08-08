@@ -216,6 +216,12 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 # COPY ./000-default.conf /etc/apache2/sites-available/000-default.conf
 
 
+# Enable Apache modules
+RUN a2enmod rewrite
+RUN a2enmod vhost_alias
+RUN a2enmod headers
+
+
 # Set the working directory
 WORKDIR /var/www/html
 
