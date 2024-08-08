@@ -4,8 +4,8 @@ on:
   push:
     branches:
       - main
-    paths:
-      - '7.4-wordpress/Dockerfile'
+    # paths:
+    #   - '7.4-wordpress/Dockerfile'
 
 jobs:
   build:
