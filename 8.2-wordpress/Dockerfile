@@ -208,7 +208,7 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 # Enable Apache modules
 RUN a2enmod rewrite
 RUN a2enmod vhost_alias
-RUN a2enmod headersß
+RUN a2enmod headers
 
 
 # Set the working directory
