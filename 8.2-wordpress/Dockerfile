@@ -107,16 +107,12 @@ RUN pecl install apcu
 RUN docker-php-ext-enable apcu
 
 
-# TODO: opcache – PHP can be configured to preload scripts into the opcache when the engine starts.
+# opcache – PHP can be configured to preload scripts into the opcache when the engine starts.
 # Install OPcache extension
 RUN docker-php-ext-install opcache
 
 
-# memcached (requires libmemcached >= 1.0.0) – memcached is a high-performance, distributed memory object caching system, generic in nature, but intended for use in speeding up dynamic web applications by alleviating database load.
-RUN apt-get install -y zlib1g-dev
-RUN apt-get install -y libmemcached-dev
-RUN pecl install memcached
-RUN docker-php-ext-enable memcached
+# TODO: memcached (requires libmemcached >= 1.0.0) – memcached is a high-performance, distributed memory object caching system, generic in nature, but intended for use in speeding up dynamic web applications by alleviating database load.
 
 
 # redis – PHP extension for interfacing with Redis.
