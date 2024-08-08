@@ -1,0 +1,25 @@
+---
+
+services:
+  wordpress:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    platform: linux/amd64
+    restart: unless-stopped
+    ports:
+      - 80:80
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    volumes:
+      - ./info.php:/var/www/html/index.php
+      # - ./000-default.conf:/etc/apache2/sites-available/000-default.conf
+      # - ./custom.ini:/usr/local/etc/php/conf.d/custom.ini
+      # - ./log:/var/log/apache2
+      # - ./html:/var/www/html
+      # - ./example.com:/var/www/example.com
+  
+    
