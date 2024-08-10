@@ -193,10 +193,12 @@ RUN docker-php-ext-install sockets
 
 
 # Fix CVE-2024-5171
-# Update package lists and install the latest version of libaom
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    libaom3 libaom-dev
+# Add Debian sid or trixie repository to sources list
+RUN echo "deb http://deb.debian.org/debian sid main" > /etc/apt/sources.list.d/sid.list
+# Update package list again to include sid/trixie packages
+RUN apt-get update
+# Install the fixed version of libaom from sid/trixie
+RUN apt-get install -y --no-install-recommends libaom3=3.9.1-1
 
 
 
