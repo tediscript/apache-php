@@ -192,6 +192,12 @@ RUN docker-php-ext-install sockets
 # curl (bundled) (recommended >= 8.4)
 
 
+# Fix CVE-2024-5171
+# Update package lists and install the latest version of libaom
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    libaom3 libaom-dev
+
 
 
 # Clean up to reduce image size
