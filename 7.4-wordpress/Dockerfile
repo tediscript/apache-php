@@ -220,6 +220,7 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 RUN a2enmod rewrite
 RUN a2enmod vhost_alias
 RUN a2enmod headers
+RUN a2enmod remoteip
 
 
 # Set the working directory
