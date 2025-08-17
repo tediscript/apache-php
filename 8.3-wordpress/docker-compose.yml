@@ -1,7 +1,7 @@
 ---
 
 services:
-  wordpress:
+  php83:
     build:
       context: .
       dockerfile: Dockerfile
