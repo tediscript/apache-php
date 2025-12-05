@@ -28,6 +28,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: 8.4-laravel-dev
+          platforms: linux/amd64,linux/arm64,linux/arm/v7
           push: true
           tags: tediscript/apache-php:8.4-laravel-dev
 
