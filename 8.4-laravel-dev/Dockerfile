@@ -20,8 +20,11 @@ RUN apt-get install -y unzip
 # === DATABASE TOOLS (line-by-line, mudah ganti DB) ===
 RUN apt-get install -y sqlite3
 RUN apt-get install -y libsqlite3-dev
-# RUN apt-get install -y postgresql-client
-# RUN apt-get install -y mysql-client
+RUN apt-get install -y default-mysql-client
+RUN apt-get install -y postgresql-client
+
+# === REDIS (cache & queue) ===
+RUN apt-get install -y redis-server
 
 # === IMAGE PROCESSING LIBS (line-by-line, mudah customize) ===
 RUN apt-get install -y libpng-dev
@@ -35,12 +38,16 @@ RUN apt-get install -y \
     libonig-dev \
     libxml2-dev \
     libzip-dev \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+    libpq-dev \
+    libicu-dev \
+    supervisor
 
 # === PHP EXTENSIONS (gabung, jarang berubah) ===
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg && \
     docker-php-ext-install -j$(nproc) \
     pdo_sqlite \
+    pdo_mysql \
+    pdo_pgsql \
     mbstring \
     dom \
     zip \
@@ -48,7 +55,13 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg && \
     bcmath \
     fileinfo \
     exif \
-    gd
+    gd \
+    intl \
+    opcache \
+    sockets
+
+# === REDIS PHP EXTENSION ===
+RUN pecl install redis && docker-php-ext-enable redis
 
 # === APACHE MODULES (pisah untuk testing) ===
 RUN a2enmod rewrite
@@ -63,6 +76,11 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
 RUN apt-get install -y nodejs
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# === OPCACHE CONFIG (optimized for development) ===
+RUN echo "opcache.enable=1" >> /usr/local/etc/php/conf.d/opcache.ini && \
+    echo "opcache.revalidate_freq=0" >> /usr/local/etc/php/conf.d/opcache.ini && \
+    echo "opcache.validate_timestamps=1" >> /usr/local/etc/php/conf.d/opcache.ini
 
 # === APACHE CONFIG ===
 ENV APACHE_DOCUMENT_ROOT=/var/www/html/public
