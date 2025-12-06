@@ -3,46 +3,40 @@ FROM php:8.4-apache
 
 WORKDIR /var/www/html
 
-# Update package list
-RUN apt-get update
-
-# === ESSENTIAL CLI TOOLS (line-by-line untuk flexibility) ===
-RUN apt-get install -y git
-RUN apt-get install -y curl
-RUN apt-get install -y wget
-RUN apt-get install -y zip
-RUN apt-get install -y unzip
-
-# === EDITOR TOOLS (optional, uncomment jika butuh) ===
-# RUN apt-get install -y vim
-# RUN apt-get install -y nano
-
-# === DATABASE TOOLS (line-by-line, mudah ganti DB) ===
-RUN apt-get install -y sqlite3
-RUN apt-get install -y libsqlite3-dev
-RUN apt-get install -y default-mysql-client
-RUN apt-get install -y postgresql-client
-
-# === REDIS (cache & queue) ===
-RUN apt-get install -y redis-server
-
-# === IMAGE PROCESSING LIBS (line-by-line, mudah customize) ===
-RUN apt-get install -y libpng-dev
-RUN apt-get install -y libjpeg-dev
-RUN apt-get install -y libfreetype6-dev
-# RUN apt-get install -y libwebp-dev
-# RUN apt-get install -y imagemagick
-
-# === PHP CORE LIBS (gabung, foundation stabil) ===
-RUN apt-get install -y \
+# === INSTALL ALL PACKAGES IN ONE LAYER (fastest for CI) ===
+RUN apt-get update && apt-get install -y \
+    # Essential CLI tools
+    git \
+    curl \
+    wget \
+    zip \
+    unzip \
+    # Database tools
+    sqlite3 \
+    libsqlite3-dev \
+    default-mysql-client \
+    postgresql-client \
+    # Redis
+    redis-server \
+    # Image processing libs
+    libpng-dev \
+    libjpeg-dev \
+    libfreetype6-dev \
+    # PHP core libs
     libonig-dev \
     libxml2-dev \
     libzip-dev \
     libpq-dev \
     libicu-dev \
-    supervisor
+    supervisor \
+    # Node.js (from apt instead of nodesource for speed)
+    && curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+    && apt-get install -y nodejs \
+    # Cleanup in same layer
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
-# === PHP EXTENSIONS (gabung, jarang berubah) ===
+# === PHP EXTENSIONS (combined, rarely changes) ===
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg && \
     docker-php-ext-install -j$(nproc) \
     pdo_sqlite \
@@ -58,24 +52,15 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg && \
     gd \
     intl \
     opcache \
-    sockets
+    sockets \
+    && pecl install redis \
+    && docker-php-ext-enable redis
 
-# === REDIS PHP EXTENSION ===
-RUN pecl install redis && docker-php-ext-enable redis
+# === APACHE MODULES (combined) ===
+RUN a2enmod rewrite headers
 
-# === APACHE MODULES (pisah untuk testing) ===
-RUN a2enmod rewrite
-RUN a2enmod headers
-# RUN a2enmod expires
-# RUN a2enmod ssl
-
-# === COMPOSER (pisah, binary tool) ===
+# === COMPOSER (separate layer, changes less frequently) ===
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
-
-# === NODE.JS (pisah, sering upgrade) ===
-RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
-RUN apt-get install -y nodejs
-RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # === OPCACHE CONFIG (optimized for development) ===
 RUN echo "opcache.enable=1" >> /usr/local/etc/php/conf.d/opcache.ini && \
