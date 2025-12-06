@@ -28,9 +28,11 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: 8.4-laravel-dev
-          platforms: linux/amd64,linux/arm64,linux/arm/v7
+          platforms: linux/amd64
           push: true
           tags: tediscript/apache-php:8.4-laravel-dev
+          cache-from: type=registry,ref=tediscript/apache-php:8.4-laravel-dev-buildcache
+          cache-to: type=registry,ref=tediscript/apache-php:8.4-laravel-dev-buildcache,mode=max
 
       - name: Post build cleanup
         run: docker builder prune --force
