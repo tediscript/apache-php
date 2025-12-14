@@ -1,0 +1,11 @@
+services:
+  php85:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: php85
+    ports:
+      - "8000:80"
+    volumes:
+      - ./index.php:/var/www/html/public/index.php
+
