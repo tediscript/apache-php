@@ -11,6 +11,12 @@ RUN apt-get update && apt-get install -y \
     wget \
     zip \
     unzip \
+    # Database dependencies
+    sqlite3 \
+    libsqlite3-dev \
+    default-mysql-client \
+    postgresql-client \
+    libpq-dev \
     # Image processing libs
     libpng-dev \
     libjpeg-dev \
@@ -28,7 +34,7 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# === PHP EXTENSIONS (combined, rarely changes) ===
+# === PHP EXTENSIONS + DATABASE DRIVERS + REDIS (combined, rarely changes) ===
 # Note: lexbor, dom, and opcache are enabled by default in PHP 8.5
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg && \
     docker-php-ext-install -j$(nproc) \
@@ -40,25 +46,12 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg && \
     exif \
     gd \
     intl \
-    sockets
-
-# === REDIS CLIENT (comment out if not needed) ===
-RUN pecl install redis && docker-php-ext-enable redis
-
-# === DATABASE: SQLite (comment out if not needed) ===
-RUN apt-get update && apt-get install -y sqlite3 libsqlite3-dev \
-    && docker-php-ext-install pdo_sqlite
-
-# === DATABASE: MySQL (comment out if not needed) ===
-RUN apt-get update && apt-get install -y default-mysql-client \
-    && docker-php-ext-install pdo_mysql
-
-# === DATABASE: PostgreSQL (comment out if not needed) ===
-RUN apt-get update && apt-get install -y postgresql-client libpq-dev \
-    && docker-php-ext-install pdo_pgsql
-
-# === CLEANUP ===
-RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+    sockets \
+    pdo_sqlite \
+    pdo_mysql \
+    pdo_pgsql \
+    && pecl install redis \
+    && docker-php-ext-enable redis
 
 # === APACHE MODULES (combined) ===
 RUN a2enmod rewrite headers
