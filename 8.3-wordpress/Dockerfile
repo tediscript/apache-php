@@ -1,4 +1,7 @@
-FROM wordpress:php8.3-apache
+# Locked to wordpress:php8.3-apache (2026-10-28 rebuild) shipping PHP 8.3.36,
+# the out-of-band security release fixing the 2026-10-21 critical RCEs
+# CVE-2026-109618 and CVE-2026-109619.
+FROM wordpress:php8.3-apache@sha256:848b03bb7b4b160e3a670454e8e928e309c9aaeb1c2584e917f42ab5197662e2
 
 # Update package lists
 RUN apt-get update
