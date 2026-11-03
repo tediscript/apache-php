@@ -1,0 +1,59 @@
+name: Check base image digest drift (8.3-wordpress)
+
+on:
+  schedule:
+    - cron: '0 3 * * 1' # every Monday 03:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Compare upstream tag with pinned digest
+        id: cmp
+        run: |
+          UPSTREAM=$(docker buildx imagetools inspect wordpress:php8.3-apache --format '{{.Manifest.Digest}}')
+          PINNED=$(grep -oE 'wordpress:php8.3-apache@sha256:[a-f0-9]{64}' 8.3-wordpress/Dockerfile | cut -d@ -f2)
+          echo "upstream=$UPSTREAM" >> "$GITHUB_OUTPUT"
+          echo "pinned=$PINNED" >> "$GITHUB_OUTPUT"
+          echo "upstream: $UPSTREAM"
+          echo "pinned:   $PINNED"
+          if [ "$UPSTREAM" = "$PINNED" ]; then
+            echo "drift=no" >> "$GITHUB_OUTPUT"
+          else
+            echo "drift=yes" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Open pull request with new digest
+        if: steps.cmp.outputs.drift == 'yes'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          UPSTREAM: ${{ steps.cmp.outputs.upstream }}
+        run: |
+          BRANCH="chore/bump-base-8.3-wordpress-${{ github.run_number }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          sed -i "s|wordpress:php8.3-apache@sha256:[a-f0-9]\{64\}|wordpress:php8.3-apache@${UPSTREAM}|" 8.3-wordpress/Dockerfile
+          git add 8.3-wordpress/Dockerfile
+          git commit -m "Bump 8.3-wordpress base image digest to ${UPSTREAM}"
+          git push origin "$BRANCH"
+          gh pr create \
+            --title "Bump 8.3-wordpress base image digest to ${UPSTREAM}" \
+            --body "The upstream \`wordpress:php8.3-apache\` tag was rebuilt (security or base-OS updates).
+
+          New digest: \`${UPSTREAM}\`
+
+          Review, update the version comment in the Dockerfile AND
+          \`PHP_EXPECTED\` in \`8.3-wordpress/test.sh\` if the PHP patch version
+          changed, then merge to rebuild. Nothing is deployed automatically." \
+            --base main \
+            --head "$BRANCH"
