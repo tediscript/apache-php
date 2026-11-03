@@ -40,3 +40,5 @@ RUN a2enmod deflate && a2enconf zz-deflate zz-security
 # Container reports healthy when Apache answers on localhost
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD curl -fsS http://localhost/ || exit 1
+
+# PR gate verification placeholder comment
