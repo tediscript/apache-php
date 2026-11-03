@@ -28,6 +28,11 @@ services:
       - ./zz-wordpress.ini:/usr/local/etc/php/conf.d/zz-wordpress.ini:ro
       - ./zz-opcache.ini:/usr/local/etc/php/conf.d/zz-opcache.ini:ro
       - ./zz-logging.ini:/usr/local/etc/php/conf.d/zz-logging.ini:ro
+      - ./zz-perf.ini:/usr/local/etc/php/conf.d/zz-perf.ini:ro
+      - ./zz-hardening.ini:/usr/local/etc/php/conf.d/zz-hardening.ini:ro
+      # Apache confs: edit + restart applies (symlinks created at build time)
+      - ./zz-deflate.conf:/etc/apache2/conf-available/zz-deflate.conf:ro
+      - ./zz-security.conf:/etc/apache2/conf-available/zz-security.conf:ro
       # - ./000-default.conf:/etc/apache2/sites-available/000-default.conf
       # - ./custom.ini:/usr/local/etc/php/conf.d/custom.ini
       # - ./log:/var/log/apache2

@@ -21,7 +21,7 @@ RUN set -eux; \
 # ---- PHP settings (zz- prefix loads last, overrides earlier defaults) ----
 # Files live in the repo so they can be tweaked and bind-mounted in
 # docker-compose.yml without rebuilding the image.
-COPY zz-wordpress.ini zz-opcache.ini zz-logging.ini /usr/local/etc/php/conf.d/
+COPY zz-*.ini /usr/local/etc/php/conf.d/
 
 # ---- WP-CLI, pinned to release v2.12.0 and sha512-verified ----
 RUN set -eux; \
@@ -32,6 +32,10 @@ RUN set -eux; \
 
 # Enable additional Apache modules
 RUN a2enmod vhost_alias headers
+
+# Apache: response compression (text types only) + version-info hygiene
+COPY zz-deflate.conf zz-security.conf /etc/apache2/conf-available/
+RUN a2enmod deflate && a2enconf zz-deflate zz-security
 
 # Container reports healthy when Apache answers on localhost
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \

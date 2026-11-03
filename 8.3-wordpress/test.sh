@@ -98,19 +98,19 @@ done
 sleep 2  # give the entrypoint a beat
 
 # ---------- 1. PHP version (base digest lock) ----------
-step "1/9 PHP version (base digest lock)"
+step "1/10 PHP version (base digest lock)"
 GOT=$(docker exec "$CONTAINER" php -r 'echo PHP_VERSION;' 2>/dev/null)
 [ "$GOT" = "$PHP_EXPECTED" ] && pass "PHP $GOT" || fail "PHP version: got '$GOT', want '$PHP_EXPECTED'"
 
 # ---------- 2. PHP extensions ----------
-step "2/9 PHP extensions"
+step "2/10 PHP extensions"
 EXTS=$(docker exec "$CONTAINER" php -m 2>/dev/null)
 for e in apcu curl dom igbinary redis shmop sockets ssh2 timezonedb; do
   echo "$EXTS" | grep -qx "$e" && pass "extension $e" || fail "extension $e missing"
 done
 
 # ---------- 3. pecl version pins ----------
-step "3/9 pecl version pins"
+step "3/10 pecl version pins"
 PECL=$(docker exec "$CONTAINER" pecl list 2>/dev/null)
 while read -r name ver; do
   GOT=$(echo "$PECL" | awk -v p="$name" '$1==p{print $2}')
@@ -124,7 +124,7 @@ timezonedb 2026.6
 EOF
 
 # ---------- 4. ini settings ----------
-step "4/9 ini settings"
+step "4/10 ini settings"
 INI=$(docker exec "$CONTAINER" php -i 2>/dev/null)
 check_ini() {
   local key esc got
@@ -142,9 +142,14 @@ check_ini display_errors Off
 check_ini log_errors On
 check_ini error_log /dev/stderr
 check_ini opcache.memory_consumption 256
+check_ini opcache.interned_strings_buffer 32
 check_ini opcache.max_accelerated_files 20000
 check_ini opcache.validate_timestamps On
 check_ini opcache.revalidate_freq 60
+check_ini realpath_cache_size 4096K
+check_ini realpath_cache_ttl 600
+check_ini session.cookie_httponly On
+check_ini session.use_strict_mode On
 # max_execution_time is 0 on CLI by design; verify the shipped ini file instead
 CONF=$(docker exec "$CONTAINER" grep -h . /usr/local/etc/php/conf.d/zz-wordpress.ini 2>/dev/null)
 echo "$CONF" | grep -q '^max_execution_time=300' \
@@ -152,21 +157,21 @@ echo "$CONF" | grep -q '^max_execution_time=300' \
   || fail "max_execution_time=300 missing from zz-wordpress.ini"
 
 # ---------- 5. WP-CLI ----------
-step "5/9 WP-CLI"
+step "5/10 WP-CLI"
 GOT=$(docker exec "$CONTAINER" wp --allow-root --version 2>/dev/null | awk '{print $2}')
 [ "$GOT" = "$WPCLI_EXPECTED" ] && pass "WP-CLI $GOT" || fail "WP-CLI: got '$GOT', want '$WPCLI_EXPECTED'"
 
 # ---------- 6. Apache modules ----------
-step "6/9 Apache modules"
+step "6/10 Apache modules"
 MODS=$(docker exec "$CONTAINER" apache2ctl -M 2>/dev/null)
-for m in vhost_alias_module headers_module; do
+for m in vhost_alias_module headers_module deflate_module; do
   echo "$MODS" | grep -q "$m" && pass "$m" || fail "$m not enabled"
 done
 
 # ---------- 7. Web serving ----------
 # A fresh (uninstalled) WordPress 302-redirects / to the setup page, which is
 # correct behavior -- follow redirects and require a final 2xx (PHP executed).
-step "7/9 Web serving"
+step "7/10 Web serving"
 WEB_OK=0
 for _ in $(seq 1 "$WEB_TIMEOUT"); do
   CODE=$(curl -sL -o /dev/null -m 10 -w "%{http_code}" "http://localhost:$PORT/" 2>/dev/null || echo 000)
@@ -175,8 +180,19 @@ for _ in $(seq 1 "$WEB_TIMEOUT"); do
 done
 [ "$WEB_OK" = "1" ] && pass "HTTP $CODE after redirects (PHP executing)" || { fail "no 2xx within ${WEB_TIMEOUT}s (last: $CODE)"; dump_logs; }
 
-# ---------- 8. Healthcheck ----------
-step "8/9 Healthcheck"
+# ---------- 8. Response safety & compression ----------
+step "8/10 Response safety & compression"
+SERVER_HDR=$(curl -sI -m 10 "http://localhost:$PORT/" 2>/dev/null | grep -i '^server:' | tr -d '\r' | awk '{print tolower($0)}')
+[ "$SERVER_HDR" = "server: apache" ] \
+  && pass "Server header hides version ('$SERVER_HDR')" \
+  || fail "Server header leaks details: '$SERVER_HDR'"
+ENC=$(curl -sL -o /dev/null -m 10 -H 'Accept-Encoding: gzip' -D - "http://localhost:$PORT/" 2>/dev/null | grep -i '^content-encoding:' | tr -d '\r' | awk '{print tolower($2)}')
+[ "$ENC" = "gzip" ] \
+  && pass "gzip compression active" \
+  || fail "text responses not compressed: got '${ENC:-none}'"
+
+# ---------- 9. Healthcheck ----------
+step "9/10 Healthcheck"
 HEALTHY=0
 for _ in $(seq 1 "$HEALTH_TIMEOUT"); do
   ST=$(docker inspect "$CONTAINER" --format '{{.State.Health.Status}}' 2>/dev/null || echo "?")
@@ -186,8 +202,8 @@ for _ in $(seq 1 "$HEALTH_TIMEOUT"); do
 done
 [ "$HEALTHY" = "1" ] && pass "container healthy" || fail "health status: $ST"
 
-# ---------- 9. No dev headers ----------
-step "9/9 No dev headers in final image"
+# ---------- 10. No dev headers ----------
+step "10/10 No dev headers in final image"
 DEVS=$(docker exec "$CONTAINER" dpkg -l 2>/dev/null | grep -cE "libcurl4-openssl-dev|libxml2-dev|libssh2-1-dev" || true)
 [ "$DEVS" = "0" ] && pass "dev packages purged" || fail "dev packages present: $DEVS"
 
