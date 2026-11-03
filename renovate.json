@@ -1,0 +1,21 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "schedule": ["before 5am on Monday"],
+  "labels": ["dependencies"],
+  "automerge": false,
+  "packageRules": [
+    {
+      "description": "Pin laravel-dev base images to digests and keep them updated",
+      "matchFileNames": ["8.4-laravel-dev/**", "8.5-laravel-dev/**"],
+      "matchCategories": ["docker"],
+      "pinDigests": true
+    },
+    {
+      "description": "Base image digest bumps may change the PHP patch version; the test gate (PHP_EXPECTED) must be updated by a human in the same PR",
+      "matchFileNames": ["8.3-wordpress/**"],
+      "matchUpdateTypes": ["digest", "pin"],
+      "addLabels": ["requires-php-expected-bump-check"]
+    }
+  ]
+}
