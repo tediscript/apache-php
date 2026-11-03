@@ -6,6 +6,8 @@ on:
       - main
     paths:
       - '8.3-wordpress/**'
+      - '.github/workflows/build-8.3-wordpress.yml'
+  workflow_dispatch:
 
 jobs:
   build:
@@ -24,13 +26,19 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
+      - name: Generate build timestamp (UTC)
+        id: ts
+        run: echo "date=$(date -u +%Y%m%d%H%M%S)" >> "$GITHUB_OUTPUT"
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
           context: 8.3-wordpress
           platforms: linux/amd64
           push: true
-          tags: tediscript/apache-php:8.3-wordpress
+          tags: |
+            tediscript/apache-php:8.3-wordpress
+            tediscript/apache-php:8.3-wordpress-${{ steps.ts.outputs.date }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
