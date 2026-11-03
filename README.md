@@ -63,7 +63,7 @@ docker exec -it <container> wp db check
 - **`8.3-wordpress/test.sh`** — 42-check verification suite (versions, pins,
   ini values, Apache modules, live gzip, healthcheck). Run locally before
   pushing; CI runs it as a gate and **only pushes to Docker Hub if it passes**.
-- **Renovate** (see `renovate.json`) opens PRs when the upstream
+- **Renovate** (see `renovate.json`, explained in [`docs/renovate.md`](docs/renovate.md)) opens PRs when the upstream
   `wordpress:php8.3-apache` digest moves and when the laravel-dev base tags
   update (it also digest-pins those). Every PR runs the test suite — CI builds
   and tests on `pull_request` but never pushes to Docker Hub.
