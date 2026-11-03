@@ -18,5 +18,21 @@ RUN set -eux; \
     apt-get purge -y --auto-remove libssh2-1-dev; \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
+# ---- PHP settings (zz- prefix loads last, overrides earlier defaults) ----
+# Files live in the repo so they can be tweaked and bind-mounted in
+# docker-compose.yml without rebuilding the image.
+COPY zz-wordpress.ini zz-opcache.ini zz-logging.ini /usr/local/etc/php/conf.d/
+
+# ---- WP-CLI, pinned to release v2.12.0 and sha512-verified ----
+RUN set -eux; \
+    curl -fsSLo /usr/local/bin/wp https://github.com/wp-cli/wp-cli/releases/download/v2.12.0/wp-cli-2.12.0.phar; \
+    echo 'be928f6b8ca1e8dfb9d2f4b75a13aa4aee0896f8a9a0a1c45cd5d2c98605e6172e6d014dda2e27f88c98befc16c040cbb2bd1bfa121510ea5cdf5f6a30fe8832  /usr/local/bin/wp' | sha512sum -c -; \
+    chmod +x /usr/local/bin/wp; \
+    wp --allow-root --version | grep 'WP-CLI 2.12.0'
+
 # Enable additional Apache modules
 RUN a2enmod vhost_alias headers
+
+# Container reports healthy when Apache answers on localhost
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD curl -fsS http://localhost/ || exit 1

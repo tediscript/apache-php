@@ -22,6 +22,12 @@ services:
         max-file: "3"
     volumes:
       - ./info.php:/var/www/html/index.php
+      # Edit these files and `docker compose restart php83` to apply -- no rebuild needed.
+      # NOTE: mount individual files only; mounting a whole directory over
+      # /usr/local/etc/php/conf.d would hide the extension ini files (apcu, redis, ...)
+      - ./zz-wordpress.ini:/usr/local/etc/php/conf.d/zz-wordpress.ini:ro
+      - ./zz-opcache.ini:/usr/local/etc/php/conf.d/zz-opcache.ini:ro
+      - ./zz-logging.ini:/usr/local/etc/php/conf.d/zz-logging.ini:ro
       # - ./000-default.conf:/etc/apache2/sites-available/000-default.conf
       # - ./custom.ini:/usr/local/etc/php/conf.d/custom.ini
       # - ./log:/var/log/apache2
